@@ -127,7 +127,7 @@ north={'n','N','north','North','norte','Norte'}
 south={'s','S','south','South','sul','Sul'}
 if inp in {'s','S','sim','Sim'}:
     print('\nA partir das opções a seguir digite o numero correspondente à pista:')
-    print('[1] Pista 2x3\n[2] Pista 3x4')
+    print('[1] Pista 2x3\n[2] Pista 3x4\n[3] Pista 5x6')
     inp=input(':')
     if inp=='1': #Pista 2x3
         trackName='2x3.pro'
@@ -141,6 +141,26 @@ if inp in {'s','S','sim','Sim'}:
         eventWest={'b|a','c|b','d|c','f|e','g|f','h|g','j|i','k|j','l|k'}
         eventNorth={'e|a','i|e','f|b','j|f','g|c','k|g','h|d','l|h'}
         eventSouth={'a|e','e|i','b|f','f|j','c|g','g|k','d|h','h|l'}
+    elif inp=='3': #Pista 5x6
+        trackName='5x6.pro'
+        eventEast= {'a1|b1','b1|c1','c1|d1','d1|e1','e1|f1',
+                    'g1|h1','h1|i1','i1|j1','j1|k1','k1|l1',
+                    'm1|n1','n1|o1','o1|p1','p1|q1','q1|r1',
+                    's1|t1','t1|u1','u1|v1','v1|w1','w1|x1',
+                    'y1|z1','z1|a2','a2|b2','b2|c2','c2|d2'}
+        eventWest= {'b1|a1','c1|b1','d1|c1','e1|d1','f1|e1',
+                    'h1|g1','i1|h1','j1|i1','k1|j1','l1|k1',
+                    'n1|m1','o1|n1','p1|o1','q1|p1','r1|q1',
+                    't1|s1','u1|t1','v1|u1','w1|v1','x1|w1',
+                    'z1|y1','a2|z1','b2|a2','c2|b2','d2|c2'}
+        eventNorth={'g1|a1','h1|b1','i1|c1','j1|d1','k1|e1','l1|f1',
+                    'm1|g1','n1|h1','o1|i1','p1|j1','q1|k1','r1|l1',
+                    's1|m1','t1|n1','u1|o1','v1|p1','w1|q1','x1|r1',
+                    'y1|s1','z1|t1','a2|u1','b2|v1','c2|w1','d2|x1'}
+        eventSouth={'a1|g1','b1|h1','c1|i1','d1|j1','e1|k1','f1|l1',
+                    'g1|m1','h1|n1','i1|o1','j1|p1','k1|q1','l1|r1',
+                    'm1|s1','n1|t1','o1|u1','p1|v1','q1|w1','r1|x1',
+                    's1|y1','t1|z1','u1|a2','v1|b2','w1|c2','x1|d2'}
 else:
     trackName=input('Digite o nome do arquivo .pro, incluindo o ".pro" ao final, referente à pista\n:')
     alphabet_trackName=get_Alphabet(trackName)

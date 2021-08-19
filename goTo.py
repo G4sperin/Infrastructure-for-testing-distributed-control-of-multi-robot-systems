@@ -9,6 +9,8 @@ from ev3dev2.motor import MoveSteering, OUTPUT_A, OUTPUT_B
 from ev3dev2.sensor import INPUT_1
 from ev3dev2.sensor.lego import ColorSensor 
 
+from random import choice
+
 # Create the sensors, motors and buttons objects
 steering_drive = MoveSteering(OUTPUT_A, OUTPUT_B)
 
@@ -42,28 +44,28 @@ class commands():
         global memTime2,stablishTime
         steering_drive.on_for_seconds(steering=60,speed=15,seconds=waitTime)
         memTime2=time.time()
-        stablishTime=3
+        stablishTime=4.5
     
     #Faz o robô retorna.
     def behind(self):
         global memTime2,stablishTime
         steering_drive.on_for_degrees(steering=100,speed=15,degrees=390)
         memTime2=time.time()
-        stablishTime=4
+        stablishTime=5.5
     
     #Faz o robô seguir para a direita.
     def right(self):
         global memTime2,stablishTime
         steering_drive.on_for_degrees(steering=80,speed=15,degrees=270)#steering=80,speed=15,degrees=270
         memTime2=time.time()
-        stablishTime=3
+        stablishTime=4.5
     
     #Faz o robô seguir para a esquerda.
     def left(self):
         global memTime2,stablishTime
         steering_drive.on_for_degrees(steering=-80,speed=15,degrees=220)#steering=-70,speed=15,degrees=270
         memTime2=time.time()
-        stablishTime=3
+        stablishTime=4.5
 
     #Verifica qual estado deve ser desabilitado de acordo com o evento inserido e desabilita os eventos relacionados estado inserido
     def disableAndEnableEvents(self,pastState,futureState):
@@ -130,7 +132,7 @@ class commands():
     
     #Chama a função goWay() para que esta defina qual lado o robo deve seguir. Também chama a função updateState() para atualizar o currentState.
     def callBack(self,event):
-        global auxVal
+        global auxVal,memTime3
         if event in self.east:
             self.goWay('east')
         elif event in self.west:
@@ -142,6 +144,8 @@ class commands():
         self.updateState(event)
         self.off=False
         auxVal+=1
+        memTime3=time.time()
+
 
 # Atualiza o grafo adicionando ou removendo vertices e arcos
 def setGraphFromAut():
@@ -221,15 +225,26 @@ def on_connect(client, userdata, flags, rc):
     client.publish('topic/EV3',(myName+' connected'))
 
 def on_message(client, userdata, msg):
-    global sendMsg,run,stop,events,myName,destination
+    global sendMsg,run,stop,events,myName,destination,rand,memTime3
     newMsg=msg.payload.decode()
     #print(newMsg)
     beforeUnderscore,afterUnderscore=separateMsg(newMsg,myName)
     if newMsg == 'run':
+        memTime3=time.time()
         run=True
+        rand=2
+    elif newMsg == 'Random':
+        memTime3=time.time()
+        rand=0
+        run=True
+        destination=choice(tuple(EV3.allStates-EV3.disabledStates))
+        sendMsg=myName+' going to '+destination
+        client.publish('topic/EV3',(myName+' going to '+destination))
+        events=goTo(destination) # Calcula a trajetoria a partir da mensagem recebida
     elif newMsg == 'stop':
         stop=True
     elif beforeUnderscore == myName:
+        memTime3=time.time()
         destination=afterUnderscore
         events=goTo(destination) # Calcula a trajetoria a partir da mensagem recebida
     elif newMsg != sendMsg and beforeUnderscore != False and afterUnderscore != EV3.currentState:
@@ -246,6 +261,7 @@ client.loop_start()
 
 memTime1=time.time()
 memTime2=time.time()
+memTime3=time.time()
 waitTime=0.2
 stablishTime=0
 run=False
@@ -254,6 +270,7 @@ events=list()
 auxVal=0
 sendMsg=''
 destination=''
+rand=0
 
 EV3=commands(initWay=initWay,initState=initState,aut=aut,eventEast=eventEast,eventWest=eventWest,eventNorth=eventNorth,eventSouth=eventSouth,allStates=allStates)
 
@@ -262,21 +279,27 @@ while not stop: # forever
         color=color_sensor_in1.color
         currenTime=time.time()
         
-        if color != 1: #White
+        if color != 6: #Black
             steering_drive.on(steering=30,speed=15) #Vira para direita
             memTime1=time.time()
             EV3.off=False
 
-        else: #Black
+        else: #White
             if (currenTime-waitTime)<memTime1 or (currenTime-memTime2)<stablishTime:
                 steering_drive.on(steering=-50,speed=15) #Vira para esquerda
             elif auxVal<len(events) and events[auxVal] not in EV3.disabledEvents:
                     sendMsg=EV3.currentState+'_'+aut[EV3.currentState][events[auxVal]]
                     client.publish('topic/EV3', sendMsg)
                     EV3.callBack(events[auxVal])
-            elif EV3.currentState != destination:
+            elif EV3.currentState != destination and (currenTime-15)<memTime3: #Se não está mais que 15 segs sem ir a um novo estado
                 EV3.steering_driveOff()
                 events=goTo(destination)
+            elif rand!=2:
+                rand+=1
+                destination=choice(tuple(EV3.allStates-EV3.disabledStates))
+                sendMsg=myName+' going to '+destination
+                client.publish('topic/EV3',(myName+' going to '+destination))
+                events=goTo(destination) # Calcula a trajetoria a partir da mensagem recebida
             else:
                 EV3.steering_driveOff()
     time.sleep(0.02)
